@@ -12,6 +12,18 @@
       "target": "qwen3.6:35b-a3b-nvfp4",
       "disableThinking": true
     },
+    "qwen35-08b-nothink": {
+      "target": "qwen3.5:0.8b-nvfp4",
+      "disableThinking": true
+    },
+    "qwen35-2b-nothink": {
+      "target": "qwen3.5:2b-nvfp4",
+      "disableThinking": true
+    },
+    "qwen35-4b-nothink": {
+      "target": "qwen3.5:4b-nvfp4",
+      "disableThinking": true
+    },
     "gemma4-nothink": {
       "target": "gemma4:26b-a4b-it-q4_K_M",
       "disableThinking": true

@@ -87,6 +87,31 @@ Edit `proxy.config.json`:
 
 Run `ollama-nothink restart` after config changes.
 
+### Adding Models
+
+1. Pull the model in Ollama:
+
+```bash
+ollama pull qwen3.5:0.8b-nvfp4
+```
+
+2. Add an alias in `proxy.config.json` under the `aliases` section:
+
+```json
+"qwen35-08b-nothink": {
+  "target": "qwen3.5:0.8b-nvfp4",
+  "disableThinking": true
+}
+```
+
+3. Restart the proxy:
+
+```bash
+ollama-nothink restart
+```
+
+Then use the alias name (e.g. `qwen35-08b-nothink`) as the model name in your tools.
+
 ### API Key
 
 Set the `PROXY_API_KEY` environment variable to require authentication on `/v1/*` endpoints.
