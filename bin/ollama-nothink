@@ -92,16 +92,44 @@ cmd_restart() {
 }
 
 cmd_status() {
+  echo "Service:"
   if is_loaded; then
-    echo "launchd: loaded"
-    launchctl print "${TARGET}" | sed -n '1,20p'
+    local state
+    state=$(launchctl print "${TARGET}" 2>/dev/null | grep "state" | head -1 | awk '{print $NF}') || true
+    echo "  State:    ${state:-running}"
+    echo "  Listen:   http://127.0.0.1:11435"
   else
-    echo "launchd: not loaded"
+    echo "  State:    stopped"
+    return
   fi
 
   echo
   echo "Health:"
-  curl -fsS "http://127.0.0.1:11435/health" || true
+  local health
+  health=$(curl -fsS "http://127.0.0.1:11435/health" 2>/dev/null) || true
+  if [[ -z "${health}" ]]; then
+    echo "  Status:   unreachable"
+    return
+  fi
+
+  local ok upstream version
+  ok=$(echo "${health}" | python3 -c "import sys,json; print(json.load(sys.stdin).get('ok',''))" 2>/dev/null)
+  upstream=$(echo "${health}" | python3 -c "import sys,json; print(json.load(sys.stdin).get('upstreamReachable',''))" 2>/dev/null)
+  version=$(echo "${health}" | python3 -c "import sys,json; print(json.load(sys.stdin).get('upstreamVersion',{}).get('version',''))" 2>/dev/null)
+
+  echo "  Proxy:    $([[ "${ok}" == "True" ]] && echo "ok" || echo "error")"
+  echo "  Upstream: $([[ "${upstream}" == "True" ]] && echo "connected (Ollama ${version})" || echo "disconnected")"
+
+  echo
+  echo "Aliases:"
+  echo "${health}" | python3 -c "
+import sys, json
+aliases = json.load(sys.stdin).get('aliases', {})
+if not aliases:
+    print('  (none)')
+for name, cfg in aliases.items():
+    print(f'  {name} -> {cfg[\"target\"]}')
+" 2>/dev/null || echo "  (parse error)"
   echo
 }
 
