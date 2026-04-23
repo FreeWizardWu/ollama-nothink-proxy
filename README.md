@@ -2,7 +2,7 @@
 
 A lightweight local proxy that automatically disables thinking mode (`think: false`) for specified Ollama models, with OpenAI-compatible API support.
 
-Works with GGUF and NVFP4/MLX models on Apple Silicon.
+Works with all Ollama model formats (GGUF, MLX, etc.) on Apple Silicon.
 
 ## Why
 
