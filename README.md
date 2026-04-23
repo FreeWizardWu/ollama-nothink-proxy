@@ -92,7 +92,7 @@ Run `ollama-nothink restart` after config changes.
 1. Pull the model in Ollama:
 
 ```bash
-ollama pull qwen3.5:0.8b-nvfp4
+ollama run qwen3.5:0.8b-nvfp4
 ```
 
 2. Add an alias in `proxy.config.json` under the `aliases` section:
