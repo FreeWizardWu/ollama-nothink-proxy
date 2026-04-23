@@ -4,6 +4,14 @@ A lightweight local proxy that automatically disables thinking mode (`think: fal
 
 Built for Apple Silicon with NVFP4/MLX support.
 
+## Why
+
+Modern reasoning models like Qwen 3.5/3.6 have a built-in thinking mode that produces chain-of-thought before answering. This is great for complex tasks, but unnecessary and wasteful for simple ones like translation, quick Q&A, or text formatting.
+
+The problem: many tools and plugins (e.g. Immersive Translate, Raycast extensions, editor plugins) call Ollama's API but don't expose a way to disable thinking. You end up waiting for the model to "think" through a one-sentence translation.
+
+This proxy sits between your tools and Ollama, automatically injecting `think: false` for models you specify — no changes needed on the client side. Just point your tool at the proxy port instead of Ollama directly.
+
 ## Features
 
 - **No-thinking mode** — Aliased models always respond without chain-of-thought
