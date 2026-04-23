@@ -1,43 +1,61 @@
 # Ollama No-Think Proxy
 
-Ollama 本地代理，自动将指定模型的思考模式关闭（`think: false`），同时提供 OpenAI 兼容 API。
+A lightweight local proxy that automatically disables thinking mode (`think: false`) for specified Ollama models, with OpenAI-compatible API support.
 
-## 安装
+Built for Apple Silicon with NVFP4/MLX support.
+
+## Features
+
+- **No-thinking mode** — Aliased models always respond without chain-of-thought
+- **OpenAI-compatible API** — Drop-in replacement for OpenAI clients
+- **Dual API support** — Both Ollama native and OpenAI `/v1` endpoints
+- **Streaming** — Full SSE streaming support
+- **macOS service** — launchd integration with auto-restart and boot-time startup
+- **Global CLI** — One-command management from any directory
+- **Configurable logging** — Off by default, enable for debugging
+
+## Install
 
 ```bash
-# 全局命令（任意目录可用）
+git clone https://github.com/FreeWizardWu/ollama-nothink-proxy.git
+cd ollama-nothink-proxy
+npm install
+
+# Enable global command (optional)
 sudo ln -sf "$(pwd)/bin/ollama-nothink" /usr/local/bin/ollama-nothink
 ```
 
-## 命令
+## Usage
 
 ```bash
-ollama-nothink up       # 启动（launchd 后台常驻，开机自启）
-ollama-nothink down     # 停止
-ollama-nothink restart  # 重启（编译 + 重新加载配置）
-ollama-nothink status   # 查看运行状态和健康检查
-ollama-nothink logs     # 查看实时日志
+ollama-nothink up       # Start service (launchd, auto-restart, boot-time startup)
+ollama-nothink down     # Stop service
+ollama-nothink restart  # Restart (rebuild + reload config)
+ollama-nothink status   # Show status and health check
+ollama-nothink logs     # Tail logs
 ```
 
-## 端点
+## Endpoints
 
-- Ollama 原生 API：`http://127.0.0.1:11435`
-- OpenAI 兼容 API：`http://127.0.0.1:11435/v1`
+| Endpoint | Description |
+|----------|-------------|
+| `http://127.0.0.1:11435` | Ollama native API proxy |
+| `http://127.0.0.1:11435/v1` | OpenAI-compatible API |
 
-## 已配置的模型别名
+## Configured Aliases
 
-| 别名 | 实际模型 | 说明 |
-|------|---------|------|
-| `qwen36-nothink` | `qwen3.6:35b-a3b-q4_K_M` | GGUF 量化 |
-| `qwen36-nvfp4-nothink` | `qwen3.6:35b-a3b-nvfp4` | NVFP4 量化（MLX 加速） |
-| `gemma4-nothink` | `gemma4:26b-a4b-it-q4_K_M` | GGUF 量化 |
-| `gemma4-e2b-nothink` | `gemma4:e2b` | GGUF 量化 |
+| Alias | Target Model | Notes |
+|-------|-------------|-------|
+| `qwen36-nothink` | `qwen3.6:35b-a3b-q4_K_M` | GGUF quantization |
+| `qwen36-nvfp4-nothink` | `qwen3.6:35b-a3b-nvfp4` | NVFP4 quantization (MLX accelerated) |
+| `gemma4-nothink` | `gemma4:26b-a4b-it-q4_K_M` | GGUF quantization |
+| `gemma4-e2b-nothink` | `gemma4:e2b` | GGUF quantization |
 
-所有别名都会自动关闭思考模式，直接调用原始模型名则不会。
+All aliases automatically disable thinking mode. Calling models by their original name passes through without modification.
 
-## 配置
+## Configuration
 
-编辑 `proxy.config.json`：
+Edit `proxy.config.json`:
 
 ```json
 {
@@ -46,22 +64,26 @@ ollama-nothink logs     # 查看实时日志
   "listenPort": 11435,
   "logLevel": "off",
   "aliases": {
-    "qwen36-nvfp4-nothink": {
-      "target": "qwen3.6:35b-a3b-nvfp4",
+    "my-alias": {
+      "target": "model-name-in-ollama",
       "disableThinking": true
     }
   }
 }
 ```
 
-### 日志
+### Logging
 
-- `"logLevel": "off"` — 不记录请求日志（默认）
-- `"logLevel": "debug"` — 记录详细请求日志（排查问题时开启）
+- `"logLevel": "off"` — No request logs (default)
+- `"logLevel": "debug"` — Detailed request/response logs
 
-修改配置后执行 `ollama-nothink restart` 生效。
+Run `ollama-nothink restart` after config changes.
 
-## 示例
+### API Key
+
+Set the `PROXY_API_KEY` environment variable to require authentication on `/v1/*` endpoints.
+
+## Example
 
 ```bash
 curl http://127.0.0.1:11435/v1/chat/completions \
@@ -72,21 +94,28 @@ curl http://127.0.0.1:11435/v1/chat/completions \
     "messages": [
       {
         "role": "user",
-        "content": "用一句话介绍量子计算"
+        "content": "Explain quantum computing in one sentence."
       }
     ]
   }'
 ```
 
-## 添加新别名
+## How It Works
 
-在 `proxy.config.json` 的 `aliases` 中添加：
-
-```json
-"新别名": {
-  "target": "ollama中的实际模型名",
-  "disableThinking": true
-}
+```
+Client → Proxy (127.0.0.1:11435) → Ollama (127.0.0.1:11434)
+             │
+             ├─ Resolve model alias → inject think:false
+             ├─ Convert OpenAI format ↔ Ollama format
+             └─ Forward request and translate response
 ```
 
-然后 `ollama-nothink restart`。
+## Tech Stack
+
+- [Hono](https://hono.dev/) — Lightweight HTTP framework
+- TypeScript + Node.js
+- macOS launchd for service management
+
+## License
+
+[MIT](LICENSE)
