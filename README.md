@@ -42,17 +42,6 @@ ollama-nothink logs     # Tail logs
 | `http://127.0.0.1:11435` | Ollama native API proxy |
 | `http://127.0.0.1:11435/v1` | OpenAI-compatible API |
 
-## Configured Aliases
-
-| Alias | Target Model | Notes |
-|-------|-------------|-------|
-| `qwen36-nothink` | `qwen3.6:35b-a3b-q4_K_M` | GGUF quantization |
-| `qwen36-nvfp4-nothink` | `qwen3.6:35b-a3b-nvfp4` | NVFP4 quantization (MLX accelerated) |
-| `gemma4-nothink` | `gemma4:26b-a4b-it-q4_K_M` | GGUF quantization |
-| `gemma4-e2b-nothink` | `gemma4:e2b` | GGUF quantization |
-
-All aliases automatically disable thinking mode. Calling models by their original name passes through without modification.
-
 ## Configuration
 
 Edit `proxy.config.json`:
