@@ -2,7 +2,7 @@
 
 A lightweight local proxy that automatically disables thinking mode (`think: false`) for specified Ollama models, with OpenAI-compatible API support.
 
-Works with all Ollama model formats (GGUF, MLX, etc.) on Apple Silicon.
+Works with all Ollama model formats (GGUF, MLX, etc.) on macOS, Linux, and Windows.
 
 ## Why
 
@@ -19,7 +19,7 @@ This proxy sits between your tools and Ollama, automatically injecting `think: f
 - **Dual API support** — Both Ollama native and OpenAI `/v1` endpoints
 - **Streaming** — Full SSE streaming support
 - **macOS service** — launchd integration with auto-restart and boot-time startup
-- **Global CLI** — One-command management from any directory
+- **Global CLI** — One-command management from any directory (macOS)
 - **Configurable logging** — Off by default, enable for debugging
 
 ## Install
@@ -28,12 +28,23 @@ This proxy sits between your tools and Ollama, automatically injecting `think: f
 git clone https://github.com/FreeWizardWu/ollama-nothink-proxy.git
 cd ollama-nothink-proxy
 npm install
+```
 
+### macOS
+
+```bash
 # Enable global command (optional)
 sudo ln -sf "$(pwd)/bin/ollama-nothink" /usr/local/bin/ollama-nothink
 ```
 
-## Usage
+### Other platforms
+
+```bash
+# Start the proxy directly
+npm run build && npm start
+```
+
+## Usage (macOS)
 
 ```bash
 ollama-nothink up       # Start service (launchd, auto-restart, boot-time startup)
