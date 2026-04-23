@@ -1,0 +1,24 @@
+{
+  "upstreamBaseUrl": "http://127.0.0.1:11434",
+  "listenHost": "127.0.0.1",
+  "listenPort": 11435,
+  "logLevel": "off",
+  "aliases": {
+    "qwen36-nothink": {
+      "target": "qwen3.6:35b-a3b-q4_K_M",
+      "disableThinking": true
+    },
+    "qwen36-nvfp4-nothink": {
+      "target": "qwen3.6:35b-a3b-nvfp4",
+      "disableThinking": true
+    },
+    "gemma4-nothink": {
+      "target": "gemma4:26b-a4b-it-q4_K_M",
+      "disableThinking": true
+    },
+    "gemma4-e2b-nothink": {
+      "target": "gemma4:e2b",
+      "disableThinking": true
+    }
+  }
+}

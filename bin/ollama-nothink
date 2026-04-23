@@ -1,0 +1,135 @@
+#!/bin/zsh
+
+set -euo pipefail
+
+# 解析软链接的真实路径，避免通过全局软链接运行时目录解析错误
+REAL_SCRIPT=$(readlink -f "${0}" 2>/dev/null || readlink "${0}" 2>/dev/null || echo "${0}")
+SCRIPT_DIR=$(cd -- "$(dirname -- "${REAL_SCRIPT}")" && pwd)
+REPO_ROOT=$(cd -- "${SCRIPT_DIR}/.." && pwd)
+LABEL="com.wumu2.ollama-nothink-proxy"
+PLIST_PATH="${HOME}/Library/LaunchAgents/${LABEL}.plist"
+LOG_DIR="${REPO_ROOT}/logs"
+OUT_LOG="${LOG_DIR}/proxy.out.log"
+ERR_LOG="${LOG_DIR}/proxy.err.log"
+UID_VALUE=$(id -u)
+TARGET="gui/${UID_VALUE}/${LABEL}"
+NODE_BIN=$(command -v node)
+
+ensure_layout() {
+  mkdir -p "${HOME}/Library/LaunchAgents" "${LOG_DIR}"
+}
+
+ensure_dependencies() {
+  if [[ ! -d "${REPO_ROOT}/node_modules" ]]; then
+    echo "Installing dependencies..."
+    (cd "${REPO_ROOT}" && npm install)
+  fi
+}
+
+build_project() {
+  echo "Building project..."
+  (cd "${REPO_ROOT}" && npm run build)
+}
+
+write_plist() {
+  cat > "${PLIST_PATH}" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>${LABEL}</string>
+  <key>WorkingDirectory</key>
+  <string>${REPO_ROOT}</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>${NODE_BIN}</string>
+    <string>${REPO_ROOT}/dist/src/server.js</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>${OUT_LOG}</string>
+  <key>StandardErrorPath</key>
+  <string>${ERR_LOG}</string>
+</dict>
+</plist>
+EOF
+}
+
+is_loaded() {
+  launchctl print "${TARGET}" >/dev/null 2>&1
+}
+
+cmd_up() {
+  ensure_layout
+  ensure_dependencies
+  build_project
+  write_plist
+  if is_loaded; then
+    launchctl bootout "gui/${UID_VALUE}" "${PLIST_PATH}" >/dev/null 2>&1 || true
+  fi
+  launchctl bootstrap "gui/${UID_VALUE}" "${PLIST_PATH}"
+  launchctl kickstart -k "${TARGET}"
+  echo "Service started: ${LABEL}"
+  echo "Base URL: http://127.0.0.1:11435"
+}
+
+cmd_down() {
+  if is_loaded; then
+    launchctl bootout "gui/${UID_VALUE}" "${PLIST_PATH}"
+    echo "Service stopped: ${LABEL}"
+  else
+    echo "Service is not running: ${LABEL}"
+  fi
+}
+
+cmd_restart() {
+  cmd_down || true
+  cmd_up
+}
+
+cmd_status() {
+  if is_loaded; then
+    echo "launchd: loaded"
+    launchctl print "${TARGET}" | sed -n '1,20p'
+  else
+    echo "launchd: not loaded"
+  fi
+
+  echo
+  echo "Health:"
+  curl -fsS "http://127.0.0.1:11435/health" || true
+  echo
+}
+
+cmd_logs() {
+  ensure_layout
+  touch "${OUT_LOG}" "${ERR_LOG}"
+  echo "Tailing ${OUT_LOG} and ${ERR_LOG}"
+  tail -n 100 -f "${OUT_LOG}" "${ERR_LOG}"
+}
+
+case "${1:-}" in
+  up)
+    cmd_up
+    ;;
+  down)
+    cmd_down
+    ;;
+  restart)
+    cmd_restart
+    ;;
+  status)
+    cmd_status
+    ;;
+  logs)
+    cmd_logs
+    ;;
+  *)
+    echo "Usage: ${0} {up|down|restart|status|logs}"
+    exit 1
+    ;;
+esac
